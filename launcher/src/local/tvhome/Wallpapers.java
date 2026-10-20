@@ -16,15 +16,18 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 /**
- * Shuffles through wallpapers. Your own photos win: anything in
- * /sdcard/Android/data/local.tvhome/files/wallpapers (see add-wallpapers.ps1) replaces the
- * bundled nature photos. The folder is re-checked on every rotation, so new photos show up
- * without restarting.
+ * Shuffles through wallpapers: the bundled nature photos plus anything in
+ * /sdcard/Android/data/local.tvhome/files/wallpapers (see add-wallpapers.ps1). A file named
+ * .mine-only in that folder hides the nature photos while your own are there. The folder is
+ * re-checked on every rotation, so new photos show up without restarting.
  */
 final class Wallpapers {
     static final class Frame {
@@ -40,11 +43,13 @@ final class Wallpapers {
     }
 
     private static final String ASSET_DIR = "wallpapers";
+    private static final String MINE_ONLY = ".mine-only";
     private static final int BLUR_W = 192, BLUR_H = 108;
 
     private final Context context;
     private final Map<String, String> credits = new HashMap<>();
-    private final List<String> deck = new ArrayList<>();
+    private final Set<String> shown = new HashSet<>();
+    private final Random random = new Random();
     private String last;
 
     Wallpapers(Context context) {
@@ -60,13 +65,16 @@ final class Wallpapers {
     Frame next(int w, int h) {
         List<String> all = sources();
         if (all.isEmpty()) return null;
-        deck.retainAll(all);
-        if (deck.isEmpty()) {
-            deck.addAll(all);
-            Collections.shuffle(deck);
-            if (deck.size() > 1 && deck.get(0).equals(last)) Collections.swap(deck, 0, deck.size() - 1);
+        // Pick from the photos not shown yet this round, so newly added ones join straight away.
+        List<String> left = new ArrayList<>(all);
+        left.removeAll(shown);
+        if (left.isEmpty()) {
+            shown.clear();
+            left.addAll(all);
+            if (left.size() > 1) left.remove(last);
         }
-        String src = deck.remove(0);
+        String src = left.get(random.nextInt(left.size()));
+        shown.add(src);
         last = src;
         try {
             Bitmap full = decode(src, w, h);
@@ -81,15 +89,17 @@ final class Wallpapers {
         List<String> out = new ArrayList<>();
         File dir = userFolder();
         File[] files = dir == null ? null : dir.listFiles();
+        boolean mineOnly = false;
         if (files != null) {
             for (File f : files) {
                 String n = f.getName().toLowerCase(Locale.ROOT);
+                if (n.equals(MINE_ONLY)) mineOnly = true;
                 if (n.endsWith(".jpg") || n.endsWith(".jpeg") || n.endsWith(".png") || n.endsWith(".webp")) {
                     out.add("file:" + f.getAbsolutePath());
                 }
             }
         }
-        if (out.isEmpty()) {
+        if (out.isEmpty() || !mineOnly) {
             try {
                 for (String n : context.getAssets().list(ASSET_DIR)) {
                     if (n.endsWith(".jpg")) out.add("asset:" + ASSET_DIR + "/" + n);

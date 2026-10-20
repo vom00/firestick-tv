@@ -10,3 +10,5 @@ build/
 *.apk
 *.idsig
 *.keystore
+# Your own wallpapers for add-wallpapers.ps1 (other people's artwork, not ours to publish)
+my-wallpapers/

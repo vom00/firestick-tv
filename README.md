@@ -25,7 +25,7 @@ remote first, because the scripts reach it over Wi-Fi.
 | `debloat-firetv.ps1 -Batch all` | Disables everything listed below. Safe to re-run; Fire OS turns Alexa's voice service back on at every boot. |
 | `restore-firetv.ps1` | Puts the TV back the way the first backup found it. Run it with `-DryRun` first to see the list. `-KeepLauncher` keeps TV Home. |
 | `build-launcher.ps1` / `install-launcher.ps1` | Build TV Home from `launcher\` and install it. Run them again after a Fire OS update. |
-| `add-wallpapers.ps1 -Folder <path>` | Uses your own photos instead of the nature set. Also takes `-List`, `-Replace` and `-Reset`. |
+| `add-wallpapers.ps1 -Folder <path>` | Adds your own photos to the rotation, mixed in with the nature set. `-Nature Off` shows only yours. Also takes `-List`, `-Replace` and `-Reset`. |
 
 ## What gets disabled
 
@@ -62,7 +62,8 @@ or Back, returns home.
 Search filters your apps as you type. The keyboard's Search key, or the "Search the web" tile,
 opens Bing results in Silk.
 
-Nine nature photos from Wikimedia Commons rotate every 45 seconds and each time you come home.
+Nine nature photos from Wikimedia Commons, plus any of your own, rotate every 45 seconds and each
+time you come home.
 Settings has shortcuts to Network, Display & Sounds, Applications, Bluetooth, Preferences,
 Privacy, Accessibility, Account, My Fire TV and Amazon's quick menu (Sleep, Mirroring, Profiles),
 plus Next Wallpaper and Wallpaper Credits. The clock follows the TV's 12/24-hour setting.
@@ -78,9 +79,10 @@ be switched off, but it now stays in the background (about 40 MB) instead of on 
 
 ## Not in this repo
 
-The `tools\` folder (Google's Android SDK), device backups, screenshots, build output and the
-APK signing key stay local. `build-launcher.ps1` makes a new signing key if there isn't one, but
-an APK signed with a new key won't install over one signed with the old key.
+The `tools\` folder (Google's Android SDK), device backups, screenshots, build output, the APK
+signing key and `my-wallpapers\` (a place for your own photos) stay local. `build-launcher.ps1`
+makes a new signing key if there isn't one, but an APK signed with a new key won't install over
+one signed with the old key.
 
 ## Photo credits
 

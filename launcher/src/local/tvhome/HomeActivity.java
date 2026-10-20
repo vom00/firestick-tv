@@ -14,6 +14,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -159,6 +160,25 @@ public class HomeActivity extends Activity {
         }
     }
 
+    /**
+     * The dock's scroller. Android scrolls just far enough to show a focused tile's edge, so the
+     * last tile's focus lift was cut off flat; this keeps the row's padding in view as well.
+     */
+    private static final class DockScroll extends HorizontalScrollView {
+        private final int margin;
+
+        DockScroll(Context c, int margin) {
+            super(c);
+            this.margin = margin;
+        }
+
+        @Override protected int computeScrollDeltaToGetChildRectOnScreen(Rect rect) {
+            Rect r = new Rect(rect);
+            r.inset(-margin, 0);
+            return super.computeScrollDeltaToGetChildRectOnScreen(r);
+        }
+    }
+
     private static final class Receiver extends BroadcastReceiver {
         private final Runnable action;
 
@@ -295,12 +315,14 @@ public class HomeActivity extends Activity {
         clock = text(66, "sans-serif-thin", Color.WHITE);
         clock.setIncludeFontPadding(false);
         date = caps(11);
-        head.addView(greeting);
+        // Explicit wrap_content: LinearLayout's default (match_parent) sizes the greeting and
+        // date to the clock's width, which cut "Good afternoon" to "Good" when the time was short.
+        head.addView(greeting, new LinearLayout.LayoutParams(-2, -2));
         LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(-2, -2);
         clp.topMargin = px(2);
         clp.bottomMargin = px(4);
         head.addView(clock, clp);
-        head.addView(date);
+        head.addView(date, new LinearLayout.LayoutParams(-2, -2));
         FrameLayout.LayoutParams hlp = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.START);
         hlp.setMargins(px(50), px(30), 0, 0);
         root.addView(head, hlp);
@@ -362,7 +384,7 @@ public class HomeActivity extends Activity {
 
         dock = new Glass(this, px(26));
         dock.setElevation(px(12));
-        HorizontalScrollView scroll = new HorizontalScrollView(this);
+        HorizontalScrollView scroll = new DockScroll(this, px(12));
         scroll.setHorizontalScrollBarEnabled(false);
         scroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
         dockRow = new LinearLayout(this);
@@ -822,7 +844,7 @@ public class HomeActivity extends Activity {
 
         if (SETTINGS.equals(kind)) {
             TextView hint = text(13, "sans-serif", 0xB3FFFFFF);
-            hint.setText("Your own wallpapers: run add-wallpapers.ps1 on your PC");
+            hint.setText("Add your own wallpapers with add-wallpapers.ps1 on your PC");
             FrameLayout.LayoutParams hlp = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.END);
             hlp.setMargins(0, px(48), px(64), 0);
             overlay.addView(hint, hlp);
