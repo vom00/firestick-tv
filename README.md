@@ -50,10 +50,11 @@ Home, run `install-launcher.ps1` again, or `restore-firetv.ps1`.
 
 ## TV Home
 
-The home screen shows a greeting, the clock and the date at the top left, with glass Apps,
-Search and Settings buttons at the top right (press Up from the dock to reach them). The focused
-app's name sits above a liquid-glass dock. Six apps fit in the dock and more scroll; press the
-Menu button (☰) on a dock app to move or remove it.
+The home screen shows a greeting, the clock and the date at the top left, in the rounded Nunito
+font with the clock cut from liquid glass, and glass Apps, Search and Settings buttons at the top
+right (press Up from the dock to reach them). The focused app's name sits above a liquid-glass
+dock. Six apps fit in the dock and more scroll; press the Menu button (☰) on a dock app to move
+or remove it.
 
 Press Down on the dock, or choose Apps, and the dock slides to the top while every other app
 appears below on a blurred wallpaper. Menu on one of those adds it to the dock. Up from the dock,
@@ -84,10 +85,13 @@ signing key and `my-wallpapers\` (a place for your own photos) stay local. `buil
 makes a new signing key if there isn't one, but an APK signed with a new key won't install over
 one signed with the old key.
 
-## Photo credits
+## Credits
 
-The wallpapers in `launcher\assets\wallpapers` were cropped to 1920x1080 and keep their original
-licences:
+The font is [Nunito](https://github.com/googlefonts/nunito) by the Nunito Project Authors, under
+the SIL Open Font License 1.1 (`launcher\assets\fonts\OFL.txt`).
+
+The wallpapers in `launcher\assets\wallpapers` are from Wikimedia Commons, cropped to 1920x1080,
+and keep their original licences:
 
 - Lake Louise, Canada. Photo: Chensiyuan, CC BY-SA 4.0
 - Blue Lake, Mount Cook National Park, New Zealand. Photo: Krzysztof Golik, CC BY-SA 4.0

@@ -19,6 +19,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -125,7 +126,9 @@ public class HomeActivity extends Activity {
     private View libraryDim;
     private LinearLayout head, bar, bottom, dockRow, gridRows;
     private ScrollView grid;
-    private TextView greeting, clock, date, title, dockHint;
+    private TextView greeting, date, title, dockHint;
+    private GlassText clock;
+    private final Map<Integer, Typeface> fonts = new HashMap<>();
     private Pill appsPill, searchPill, settingsPill, lastPill;
     private Glass dock;
     private View lastDockFocus;
@@ -312,15 +315,15 @@ public class HomeActivity extends Activity {
         head = new LinearLayout(this);
         head.setOrientation(LinearLayout.VERTICAL);
         greeting = caps(11);
-        clock = text(66, "sans-serif-thin", Color.WHITE);
-        clock.setIncludeFontPadding(false);
+        clock = new GlassText(this, font(700), 66);
         date = caps(11);
         // Explicit wrap_content: LinearLayout's default (match_parent) sizes the greeting and
         // date to the clock's width, which cut "Good afternoon" to "Good" when the time was short.
         head.addView(greeting, new LinearLayout.LayoutParams(-2, -2));
+        // The glass clock keeps 10dp around its digits for the shadow; pull it back into line.
         LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(-2, -2);
-        clp.topMargin = px(2);
-        clp.bottomMargin = px(4);
+        clp.setMargins(-px(10), px(8) - px(10), 0, px(9) - px(10));
+        head.setClipChildren(false);
         head.addView(clock, clp);
         head.addView(date, new LinearLayout.LayoutParams(-2, -2));
         FrameLayout.LayoutParams hlp = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.START);
@@ -429,9 +432,23 @@ public class HomeActivity extends Activity {
     /** Small spaced-out capitals, like "GOOD AFTERNOON". */
     private TextView caps(float sp) {
         TextView t = text(sp, "sans-serif-medium", 0xD9FFFFFF);
-        t.setLetterSpacing(0.16f);
+        t.setTypeface(font(700));
+        t.setIncludeFontPadding(false);
+        t.setLetterSpacing(0.08f);   // Nunito is wider than Roboto, so less than before
         t.setAllCaps(true);
         return t;
+    }
+
+    /** Nunito, a free rounded font close to the one on the iPhone lock screen, at a given weight. */
+    private Typeface font(int weight) {
+        Typeface f = fonts.get(weight);
+        if (f == null) {
+            f = Build.VERSION.SDK_INT >= 26
+                    ? new Typeface.Builder(getAssets(), "fonts/Nunito.ttf").setFontVariationSettings("'wght' " + weight).build()
+                    : Typeface.createFromAsset(getAssets(), "fonts/Nunito.ttf");
+            fonts.put(weight, f);
+        }
+        return f;
     }
 
     private static FrameLayout.LayoutParams fill() {
@@ -476,6 +493,7 @@ public class HomeActivity extends Activity {
             wallBottom.setAlpha(0f);
             wallBottom.animate().alpha(1f).setDuration(600).start();
             for (Glass g : glass) g.setBlur(f.blur, 0);
+            clock.setBlur(f.blur, 0);
             return;
         }
         final Wallpapers.Frame previous = current;
@@ -493,6 +511,7 @@ public class HomeActivity extends Activity {
             }, 1_000);
         }).start();
         for (Glass g : glass) g.setBlur(f.blur, FADE_MS);
+        clock.setBlur(f.blur, FADE_MS);
     }
 
     // ---- apps ------------------------------------------------------------------------------

@@ -130,7 +130,8 @@ final class Wallpapers {
 
         BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inSampleSize = sample;
-        opts.inPreferredConfig = Bitmap.Config.RGB_565;
+        // Full colour: 16-bit RGB_565 halves the memory but bands and dithers skies and fog.
+        opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
         Bitmap b;
         try (InputStream in = open(src)) {
             b = BitmapFactory.decodeStream(in, null, opts);
