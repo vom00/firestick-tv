@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TV Home</string>
+    <string name="service_label">Home button for TV Home</string>
+    <string name="service_description">Opens TV Home when you press Home on the remote. Hold Home for the Sleep, Mirroring and Profiles menu.</string>
+
+    <style name="Home" parent="@android:style/Theme.Material.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:colorAccent">#FFFFFFFF</item>
+    </style>
+</resources>

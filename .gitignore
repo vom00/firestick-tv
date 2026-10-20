@@ -1,0 +1,12 @@
+﻿# Google's Android SDK and adb (download separately)
+tools/
+# Device-specific: backups hold settings and IDs from the TV
+backups/
+debloat-log.csv
+# Screenshots from testing (may show account and browsing details)
+screenshots/
+# Build output and the APK signing key
+build/
+*.apk
+*.idsig
+*.keystore

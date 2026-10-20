@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 320x180 Fire TV app-list banner: a house on slate. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path android:fillColor="#FF1F2937" android:pathData="M0,0h320v180h-320z" />
+    <path android:fillColor="#FF2F6F5E" android:pathData="M0,130 C60,105 110,120 160,108 C210,96 260,112 320,100 L320,180 L0,180z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M160,48 L206,86 L196,86 L196,128 L172,128 L172,104 L148,104 L148,128 L124,128 L124,86 L114,86z" />
+</vector>
