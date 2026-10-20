@@ -1,9 +1,9 @@
 # Disables (never uninstalls) Fire TV ads, telemetry and unused Amazon apps, one batch at a time.
 # Everything here is undone by restore-firetv.ps1. Safe to re-run: Fire OS turns a few of these
 # back on now and then (Alexa's voice service at every boot), so "-Batch all" re-applies everything.
-# Usage: .\debloat-firetv.ps1 -Batch ads|unused|alexa|updates|tweaks|all [-Device ip:5555]
+# Usage: .\debloat-firetv.ps1 -Batch ads|unused|alexa|updates|background|tweaks|all [-Device ip:5555]
 param(
-    [Parameter(Mandatory)][ValidateSet("ads", "unused", "alexa", "updates", "tweaks", "all")][string]$Batch,
+    [Parameter(Mandatory)][ValidateSet("ads", "unused", "alexa", "updates", "background", "tweaks", "all")][string]$Batch,
     [string]$Device = "192.168.0.148:5555"
 )
 . (Join-Path $PSScriptRoot "ftv-common.ps1")
@@ -55,12 +55,20 @@ $Batches = [ordered]@{
         "com.amazon.tv.forcedotaupdater.v2"
         "com.amazon.tv.easyupgrade"
     )
+    # Background services that wake up after every boot and hold memory on a 1 GB stick.
+    # DiodeAPK (com.amazon.diode, remote diagnostics) would belong here but is Amazon-protected.
+    # Remote Device Management stays on: it reports the remote's battery and updates its firmware.
+    background = @(
+        "com.amazon.ceviche"                   # event tracking and metrics upload
+        "com.amazon.whisperjoin.middleware.np" # Frustration-Free Setup for new Echo/smart-home devices
+    )
 }
 
 # Settings changed by the "tweaks" batch. restore-firetv.ps1 puts back the backed-up values.
 $Tweaks = @(
-    @{ ns = "global"; key = "window_animation_scale";       value = "0.5" }
-    @{ ns = "global"; key = "transition_animation_scale";   value = "0.5" }
+    # App open/close animations off. The animator scale drives TV Home's own fades, so it stays.
+    @{ ns = "global"; key = "window_animation_scale";       value = "0" }
+    @{ ns = "global"; key = "transition_animation_scale";   value = "0" }
     @{ ns = "global"; key = "animator_duration_scale";      value = "0.5" }
     @{ ns = "secure"; key = "USAGE_METRICS_UPLOAD_ENABLED"; value = "0" }
     @{ ns = "secure"; key = "usage_metrics_marketing_enabled"; value = "0" }

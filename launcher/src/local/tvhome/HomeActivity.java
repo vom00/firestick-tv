@@ -252,11 +252,19 @@ public class HomeActivity extends Activity {
         wallBottom.setImageBitmap(current.blur);
         if (!current.full.isRecycled()) current.full.recycle();
         released = true;
+        trimGraphics(TRIM_MEMORY_COMPLETE);   // what Android itself does to background apps
+    }
+
+    /**
+     * Asks the renderer to drop cached GPU memory. COMPLETE (while hidden) frees everything;
+     * UI_HIDDEN (while showing) only drops what isn't on screen, which Android otherwise keeps,
+     * so each wallpaper change used to leave 30-40 MB of old textures behind.
+     */
+    private static void trimGraphics(int level) {
         try {
-            // What Android itself does to background apps under memory pressure.
             Class<?> wmg = Class.forName("android.view.WindowManagerGlobal");
             Object instance = wmg.getMethod("getInstance").invoke(null);
-            wmg.getMethod("trimMemory", int.class).invoke(instance, TRIM_MEMORY_COMPLETE);
+            wmg.getMethod("trimMemory", int.class).invoke(instance, level);
         } catch (ReflectiveOperationException | RuntimeException e) {
             Log.w(HomeKeyService.TAG, "can't release graphics memory", e);
         }
@@ -508,6 +516,7 @@ public class HomeActivity extends Activity {
             // Free the old photo once the render thread has moved on from it.
             ui.postDelayed(() -> {
                 if (previous.full != current.full && !previous.full.isRecycled()) previous.full.recycle();
+                trimGraphics(TRIM_MEMORY_UI_HIDDEN);
             }, 1_000);
         }).start();
         for (Glass g : glass) g.setBlur(f.blur, FADE_MS);

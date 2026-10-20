@@ -22,7 +22,7 @@ remote first, because the scripts reach it over Wi-Fi.
 | Script | What it does |
 | --- | --- |
 | `backup-firetv.ps1` | Saves the package list and settings. The first backup (`backups\ORIGINAL`) is what restore uses. |
-| `debloat-firetv.ps1 -Batch all` | Disables everything listed below. Safe to re-run; Fire OS turns Alexa's voice service back on at every boot. |
+| `debloat-firetv.ps1 -Batch all` | Disables everything listed below. Safe to re-run; Fire OS turns Alexa's voice service back on at every boot, so run `-Batch alexa` after a restart. |
 | `restore-firetv.ps1` | Puts the TV back the way the first backup found it. Run it with `-DryRun` first to see the list. `-KeepLauncher` keeps TV Home. |
 | `build-launcher.ps1` / `install-launcher.ps1` | Build TV Home from `launcher\` and install it. Run them again after a Fire OS update. |
 | `add-wallpapers.ps1 -Folder <path>` | Adds your own photos to the rotation, mixed in with the nature set. `-Nature Off` shows only yours. Also takes `-List`, `-Replace` and `-Reset`. |
@@ -39,14 +39,20 @@ Alexa voice: the media player, alerts, notifications and multi-room audio. Fire 
 voice service (`vizzini`) back on at each boot, so the mic button may keep working.
 
 Updates: the forced-update and "easy upgrade" helpers. Device and app usage data upload is
-switched off, and animations run at half length.
+switched off. App open and close animations are off; other animations run at half length, which
+keeps TV Home's fades.
+
+Background services (`-Batch background`): Ceviche, an event-tracking service that wakes up
+repeatedly after every boot, and Frustration-Free Setup (Whisper Join), which sets up new Echo
+and smart-home devices automatically. Before adding a new Amazon device, turn the latter back on
+with `adb shell pm enable com.amazon.whisperjoin.middleware.np`.
 
 Prime Video, casting, screen mirroring, smart home/Matter and miniTV stay on. miniTV is
 installed, but Fire OS hides it on a US-region account, in Amazon's own app list too.
 
 Amazon marks a few packages as protected, so these stay on: ad deep-links, crash and log uploads,
-customer-service data, and the main system updater. Updates can still arrive. If one breaks TV
-Home, run `install-launcher.ps1` again, or `restore-firetv.ps1`.
+customer-service data, remote diagnostics (DiodeAPK) and the main system updater. Updates can
+still arrive. If one breaks TV Home, run `install-launcher.ps1` again, or `restore-firetv.ps1`.
 
 ## TV Home
 
@@ -74,9 +80,16 @@ screen first. TV Home covers it with a blurred copy of the wallpaper and takes o
 1 to 2 seconds by pressing its own tile in Amazon's favourites row, so keep that tile first in
 the row. Holding Home still opens Amazon's quick menu.
 
-TV Home uses about 60 MB while on screen and about 35 MB while an app plays. Amazon's home can't
-be switched off, but it now stays in the background (about 40 MB) instead of on screen (about
-100 MB).
+TV Home uses about 60-80 MB while on screen (it clears old wallpaper textures after each change)
+and about 35 MB while an app plays. Amazon's home can't be switched off, but it now stays in the
+background (about 40 MB) instead of on screen (about 100 MB).
+
+One thing it can't fix: whenever Amazon's home appears, which includes the moment before TV Home
+takes over after a Home press, it loads Prime Video in the background (about 200 MB of a 1 GB
+stick) and keeps it there. Android won't let ADB switch off just that part of Prime Video, and
+Fire OS refuses ADB connections that start on the TV itself, so TV Home can't stop it on its own.
+From the PC, `adb shell am force-stop com.amazon.firebat` frees the memory until the next Home
+press.
 
 ## Not in this repo
 
