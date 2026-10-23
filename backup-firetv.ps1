@@ -31,9 +31,12 @@ Save "package-dump.txt"      "dumpsys package packages"
 & $adb -s $Device exec-out screencap -p > $null
 cmd /c "`"$adb`" -s $Device exec-out screencap -p > `"$out\screen.png`""
 
-Set-Content (Join-Path $PSScriptRoot "backups\LATEST") $stamp
-# The first backup is the untouched original; restore-firetv.ps1 goes back to it by default.
-$original = Join-Path $PSScriptRoot "backups\ORIGINAL"
+# Each TV keeps its own pointers, by serial number, so two TVs never share an "original".
+# The first backup of a TV is its untouched original; restore-firetv.ps1 goes back to it by default.
+$serial = "$(& $adb -s $Device shell getprop ro.serialno)".Trim()
+if (-not $serial) { throw "Couldn't read the TV's serial number" }
+Set-Content (Join-Path $PSScriptRoot "backups\LATEST-$serial") $stamp
+$original = Join-Path $PSScriptRoot "backups\ORIGINAL-$serial"
 if (-not (Test-Path $original)) { Set-Content $original $stamp }
 Write-Host "Backup saved to $out"
 Get-ChildItem $out | ForEach-Object { "{0,-24} {1,10:N0} bytes" -f $_.Name, $_.Length }

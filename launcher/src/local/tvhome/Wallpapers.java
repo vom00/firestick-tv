@@ -24,10 +24,11 @@ import java.util.Random;
 import java.util.Set;
 
 /**
- * Shuffles through wallpapers: the bundled nature photos plus anything in
- * /sdcard/Android/data/local.tvhome/files/wallpapers (see add-wallpapers.ps1). A file named
- * .mine-only in that folder hides the nature photos while your own are there. The folder is
- * re-checked on every rotation, so new photos show up without restarting.
+ * Shuffles through wallpapers: the bundled nature photos plus anything in TV Home's wallpaper
+ * folders (see add-wallpapers.ps1): /sdcard/Android/data/local.tvhome/files/wallpapers, or
+ * /sdcard/Android/media/local.tvhome/wallpapers on Fire OS 8, where ADB can't write to
+ * Android/data. A file named .mine-only there hides the nature photos while your own are there.
+ * The folders are re-checked on every rotation, so new photos show up without restarting.
  */
 final class Wallpapers {
     static final class Frame {
@@ -57,8 +58,16 @@ final class Wallpapers {
         loadCredits();
     }
 
-    File userFolder() {
-        return context.getExternalFilesDir(ASSET_DIR);
+    private List<File> userFolders() {
+        List<File> out = new ArrayList<>();
+        File data = context.getExternalFilesDir(ASSET_DIR);
+        if (data != null) out.add(data);
+        File[] media = context.getExternalMediaDirs();   // created by Android for us, so ADB can fill it
+        if (media.length > 0 && media[0] != null) {
+            File dir = new File(media[0], ASSET_DIR);
+            if (dir.isDirectory() || dir.mkdirs()) out.add(dir);
+        }
+        return out;
     }
 
     /** Decodes the next wallpaper, cropped to w x h. Runs on a background thread. */
@@ -87,10 +96,10 @@ final class Wallpapers {
 
     private List<String> sources() {
         List<String> out = new ArrayList<>();
-        File dir = userFolder();
-        File[] files = dir == null ? null : dir.listFiles();
         boolean mineOnly = false;
-        if (files != null) {
+        for (File dir : userFolders()) {
+            File[] files = dir.listFiles();
+            if (files == null) continue;
             for (File f : files) {
                 String n = f.getName().toLowerCase(Locale.ROOT);
                 if (n.equals(MINE_ONLY)) mineOnly = true;

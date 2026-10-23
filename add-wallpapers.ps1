@@ -15,10 +15,14 @@ param(
 )
 . (Join-Path $PSScriptRoot "ftv-common.ps1")
 
+Connect-FireTV
+# TV Home reads both folders. Fire OS 8 doesn't let ADB into Android/data, so use its media folder there.
 $dest = "/sdcard/Android/data/local.tvhome/files/wallpapers"
+if ("$(Sh "mkdir -p $dest 2>/dev/null && touch $dest/.probe 2>/dev/null && rm $dest/.probe && echo ok")".Trim() -ne "ok") {
+    $dest = "/sdcard/Android/media/local.tvhome/wallpapers"
+}
 # TV Home hides the nature photos while this file is in the folder (and you have photos there).
 $mineOnly = "$dest/.mine-only"
-Connect-FireTV
 
 if ($Reset) {
     Sh "rm -f $dest/* $mineOnly" | Out-Null

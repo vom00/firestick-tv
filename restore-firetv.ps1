@@ -26,11 +26,20 @@ $ManagedSettings = @(
     "secure/accessibility_enabled"
 )
 
-if (-not $Backup) { $Backup = (Get-Content (Join-Path $PSScriptRoot "backups\ORIGINAL")).Trim() }
+Connect-FireTV
+# Backups belong to one TV: use this TV's original, found by serial number, and refuse another TV's.
+$serial = "$(Sh 'getprop ro.serialno')".Trim()
+if (-not $Backup) {
+    $pointer = Join-Path $PSScriptRoot "backups\ORIGINAL-$serial"
+    if (-not (Test-Path $pointer)) { throw "No original backup for this TV. Run backup-firetv.ps1 -Device $Device first." }
+    $Backup = (Get-Content $pointer).Trim()
+}
 $dir = Join-Path $PSScriptRoot "backups\$Backup"
 if (-not (Test-Path "$dir\packages-disabled.txt")) { throw "Backup not found: $dir" }
+if (-not (Select-String -Path "$dir\getprop.txt" -SimpleMatch "[ro.serialno]: [$serial]" -Quiet)) {
+    throw "Backup $Backup is from a different TV."
+}
 Write-Host "Restoring from backup $Backup$(if ($DryRun) { ' (dry run: nothing will change)' })"
-Connect-FireTV
 
 function Change([string]$what, [string]$cmd) {
     if ($DryRun) { "{0,-45} would {1}" -f $what, $cmd; return }

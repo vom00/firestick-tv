@@ -14,14 +14,15 @@ on Fire OS 7.7.1.6. Every change can be undone, and nothing Amazon ships gets un
 2. Put Google's Android tools in `tools\`: `platform-tools` (adb), build-tools 34 in
    `tools\sdk\android-14` and platform 30 in `tools\sdk\android-11`. They aren't in the repo.
 3. Pass your TV's address to any script with `-Device 192.168.x.x:5555`. The default is the
-   address of my TV.
+   address of my first TV. Everything here also works on Fire OS 8 (tested on a Fire TV Stick 4K),
+   and the scripts keep each TV's backups apart, so you can run them on several TVs.
 
 Run the scripts in PowerShell from this folder. If the TV has gone to sleep, wake it with the
 remote first, because the scripts reach it over Wi-Fi.
 
 | Script | What it does |
 | --- | --- |
-| `backup-firetv.ps1` | Saves the package list and settings. The first backup (`backups\ORIGINAL`) is what restore uses. |
+| `backup-firetv.ps1` | Saves the package list and settings. Each TV's first backup (`backups\ORIGINAL-<serial>`) is what restore uses for that TV. |
 | `debloat-firetv.ps1 -Batch all` | Disables everything listed below. Safe to re-run; Fire OS turns Alexa's voice service back on at every boot, so run `-Batch alexa` after a restart. |
 | `restore-firetv.ps1` | Puts the TV back the way the first backup found it. Run it with `-DryRun` first to see the list. `-KeepLauncher` keeps TV Home. |
 | `build-launcher.ps1` / `install-launcher.ps1` | Build TV Home from `launcher\` and install it. Run them again after a Fire OS update. |
