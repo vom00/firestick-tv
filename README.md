@@ -74,7 +74,10 @@ Nine nature photos from Wikimedia Commons, plus any of your own, rotate every 45
 time you come home.
 Settings has shortcuts to Network, Display & Sounds, Applications, Bluetooth, Preferences,
 Privacy, Accessibility, Account, My Fire TV and Amazon's quick menu (Sleep, Mirroring, Profiles),
-plus Next Wallpaper and Wallpaper Credits. The clock follows the TV's 12/24-hour setting.
+plus Next Wallpaper and Wallpaper Credits, each with a small icon. On Fire OS 8, Amazon only
+lets its own apps open Display & Sounds, Preferences, Privacy, Accessibility and Account
+directly, so those tiles open Amazon's Settings with the item highlighted: press OK once. The
+quick-menu tile is hidden there; hold Home instead. The clock follows the TV's 12/24-hour setting.
 
 Fire OS only lets Amazon-signed apps take over the Home button, so Home still goes to Amazon's
 screen first. TV Home covers it with a blurred copy of the wallpaper and takes over within about

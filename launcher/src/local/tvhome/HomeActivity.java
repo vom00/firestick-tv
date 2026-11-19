@@ -79,18 +79,38 @@ public class HomeActivity extends Activity {
     /** Blurred copy of the wallpaper on screen; HomeKeyService shows it while leaving Amazon's home. */
     static volatile Bitmap coverImage;
 
-    /** Settings shortcuts: label, intent action. Ones the device doesn't have are hidden. */
-    private static final String[][] SETTINGS_ITEMS = {
-            {"Network", "android.settings.WIFI_SETTINGS"},
-            {"Display & Sounds", "com.amazon.device.settings.action.DISPLAY_AND_SOUNDS"},
-            {"Applications", "com.amazon.device.settings.action.APPLICATIONS"},
-            {"Controllers & Bluetooth", "com.amazon.device.settings.action.CONTROLLERS"},
-            {"Preferences", "com.amazon.device.settings.action.PREFERENCES"},
-            {"Privacy", "com.amazon.device.settings.action.PRIVACY_SETTINGS"},
-            {"Accessibility", "com.amazon.device.settings.action.ACCESSIBILITY"},
-            {"Account & Profiles", "com.amazon.device.settings.action.MY_ACCOUNT"},
-            {"My Fire TV", "com.amazon.device.settings.action.DEVICE"},
-            {"Sleep, Mirroring & Profiles", "com.amazon.device.settings.action.SHOW_HUD"},
+    /**
+     * A Settings shortcut: tries its intent actions in turn. Fire OS 8 locks several Amazon settings
+     * screens to Amazon's own apps; those open Amazon's main Settings screen instead, and
+     * HomeKeyService picks the item called amazonName there. Shortcuts with neither are hidden.
+     */
+    private static final class SettingItem {
+        final String label, amazonName;
+        final int icon;
+        final String[] actions;
+
+        SettingItem(String label, int icon, String amazonName, String... actions) {
+            this.label = label;
+            this.icon = icon;
+            this.amazonName = amazonName;
+            this.actions = actions;
+        }
+    }
+
+    private static final String AMAZON_ACTION = "com.amazon.device.settings.action.";
+    private static final SettingItem[] SETTINGS_ITEMS = {
+            new SettingItem("Network", Art.NETWORK, "Network", "android.settings.WIFI_SETTINGS", AMAZON_ACTION + "NETWORK"),
+            new SettingItem("Display & Sounds", Art.DISPLAY, "Display & Sounds", AMAZON_ACTION + "DISPLAY_AND_SOUNDS"),
+            new SettingItem("Applications", Art.APPS, "Applications", AMAZON_ACTION + "APPLICATIONS"),
+            new SettingItem("Controllers & Bluetooth", Art.CONTROLLERS, "Controllers & Bluetooth Devices", AMAZON_ACTION + "CONTROLLERS"),
+            new SettingItem("Preferences", Art.PREFERENCES, "Preferences", AMAZON_ACTION + "PREFERENCES"),
+            // Privacy lives inside Preferences on Fire OS 8.
+            new SettingItem("Privacy", Art.PRIVACY, "Preferences", AMAZON_ACTION + "PRIVACY_SETTINGS"),
+            new SettingItem("Accessibility", Art.ACCESSIBILITY, "Accessibility", AMAZON_ACTION + "ACCESSIBILITY"),
+            new SettingItem("Account & Profiles", Art.ACCOUNT, "Account & Profile Settings", AMAZON_ACTION + "MY_ACCOUNT"),
+            new SettingItem("My Fire TV", Art.DEVICE, "My Fire TV", AMAZON_ACTION + "DEVICE"),
+            // Not on the main Settings screen; holding Home opens this menu too.
+            new SettingItem("Sleep, Mirroring & Profiles", Art.SLEEP, null, AMAZON_ACTION + "SHOW_HUD"),
     };
 
     private static final class AppEntry {
@@ -970,12 +990,20 @@ public class HomeActivity extends Activity {
     private List<Tile> settingsTiles() {
         List<Tile> out = new ArrayList<>();
         int w = px(148), h = w * 9 / 16;
-        PackageManager pm = getPackageManager();
-        for (String[] item : SETTINGS_ITEMS) {
-            final Intent intent = new Intent(item[1]).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            if (intent.resolveActivity(pm) == null) continue;
-            Tile t = Tile.text(this, w, h, item[0]);
+        Intent amazonSettings = openable(new Intent().setClassName(
+                "com.amazon.tv.launcher", "com.amazon.tv.launcher.ui.MainSettingsActivity"));
+        for (SettingItem item : SETTINGS_ITEMS) {
+            Intent direct = null;
+            for (String action : item.actions) {
+                direct = openable(new Intent(action));
+                if (direct != null) break;
+            }
+            final Intent intent = direct != null ? direct : item.amazonName != null ? amazonSettings : null;
+            if (intent == null) continue;
+            final String pick = direct != null ? null : item.amazonName;
+            Tile t = Tile.text(this, w, h, item.label, item.icon);
             t.card.setOnClickListener(v -> {
+                if (pick != null) HomeKeyService.pickInAmazonSettings(pick);
                 try {
                     startActivity(intent);
                 } catch (ActivityNotFoundException | SecurityException e) {
@@ -984,16 +1012,26 @@ public class HomeActivity extends Activity {
             });
             out.add(t);
         }
-        Tile next = Tile.text(this, w, h, "Next Wallpaper");
+        Tile next = Tile.text(this, w, h, "Next Wallpaper", Art.PICTURE);
         next.card.setOnClickListener(v -> {
             closeOverlay();
             nextWallpaper();
         });
         out.add(next);
-        Tile credits = Tile.text(this, w, h, "Wallpaper Credits");
+        Tile credits = Tile.text(this, w, h, "Wallpaper Credits", Art.INFO);
         credits.card.setOnClickListener(v -> showCredits());
         out.add(credits);
         return out;
+    }
+
+    /** The intent, ready to start, if it opens a screen TV Home is allowed to open; otherwise null. */
+    private Intent openable(Intent intent) {
+        PackageManager pm = getPackageManager();
+        ResolveInfo r = pm.resolveActivity(intent, 0);
+        if (r == null || r.activityInfo == null || !r.activityInfo.exported) return null;
+        String perm = r.activityInfo.permission;
+        if (perm != null && pm.checkPermission(perm, getPackageName()) != PackageManager.PERMISSION_GRANTED) return null;
+        return intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     }
 
     /** The bundled photos are CC-licensed, so their credits live here instead of on the home screen. */

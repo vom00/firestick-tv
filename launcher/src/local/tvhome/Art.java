@@ -14,9 +14,12 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 
-/** Artwork drawn in code: the small icons on the glass buttons, and tiles for apps without a TV banner. */
+/** Artwork drawn in code: the small icons on buttons and Settings tiles, and tiles for apps without a TV banner. */
 final class Art {
     static final int APPS = 0, SEARCH = 1, SETTINGS = 2;
+    // Settings tiles
+    static final int NETWORK = 3, DISPLAY = 4, CONTROLLERS = 5, PREFERENCES = 6, PRIVACY = 7,
+            ACCESSIBILITY = 8, ACCOUNT = 9, DEVICE = 10, SLEEP = 11, PICTURE = 12, INFO = 13;
 
     private Art() {}
 
@@ -30,26 +33,56 @@ final class Art {
         @Override public int getOpacity() { return PixelFormat.TRANSLUCENT; }
     }
 
-    /** Simple filled icons: a 2x2 app grid, a magnifier, a gear. */
+    /**
+     * Simple icons: filled shapes (path) plus rounded strokes (lines). The Settings icons are laid
+     * out on a 24-unit grid, like most icon sets.
+     */
     static final class Icon extends Base {
         private final int kind;
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Path path = new Path();
+        private final Path lines = new Path();
+        private float u, ox, oy;   // grid unit and origin
 
         Icon(int kind) {
             this.kind = kind;
             paint.setColor(Color.WHITE);
+            stroke.setColor(Color.WHITE);
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeCap(Paint.Cap.ROUND);
+            stroke.setStrokeJoin(Paint.Join.ROUND);
         }
 
         void setColor(int color) {
             paint.setColor(color);
+            stroke.setColor(color);
             invalidateSelf();
         }
 
+        private float x(float v) { return ox + v * u; }
+        private float y(float v) { return oy + v * u; }
+
+        private RectF box(float l, float t, float r, float b) { return new RectF(x(l), y(t), x(r), y(b)); }
+
+        private void line(float x1, float y1, float x2, float y2) {
+            lines.moveTo(x(x1), y(y1));
+            lines.lineTo(x(x2), y(y2));
+        }
+
+        private void dot(Path p, float cx, float cy, float r) { p.addCircle(x(cx), y(cy), r * u, Path.Direction.CW); }
+
         @Override protected void onBoundsChange(Rect b) {
             path.reset();
+            lines.reset();
             float s = Math.min(b.width(), b.height()), cx = b.exactCenterX(), cy = b.exactCenterY();
-            if (kind == APPS) {
+            u = s / 24f;
+            ox = cx - 12 * u;
+            oy = cy - 12 * u;
+            stroke.setStrokeWidth(2f * u);
+            if (kind >= NETWORK) {
+                settingsIcon();
+            } else if (kind == APPS) {
                 float sq = s * 0.4f, gap = s * 0.14f, r = sq * 0.28f, left = cx - sq - gap / 2, top = cy - sq - gap / 2;
                 for (int i = 0; i < 4; i++) {
                     float x = left + (i % 2) * (sq + gap), y = top + (i / 2) * (sq + gap);
@@ -73,7 +106,90 @@ final class Art {
             }
         }
 
-        @Override public void draw(Canvas c) { c.drawPath(path, paint); }
+        private void settingsIcon() {
+            switch (kind) {
+                case NETWORK:   // Wi-Fi
+                    for (float r : new float[] {4.5f, 9f, 13.5f}) lines.addArc(box(12 - r, 20 - r, 12 + r, 20 + r), 225, 90);
+                    dot(path, 12, 20, 1.7f);
+                    break;
+                case DISPLAY:   // monitor on a stand
+                    lines.addRoundRect(box(3, 4, 21, 16), 2 * u, 2 * u, Path.Direction.CW);
+                    line(12, 16, 12, 20);
+                    line(8, 20, 16, 20);
+                    break;
+                case CONTROLLERS:   // game controller
+                    lines.addRoundRect(box(2, 7, 22, 18), 5 * u, 5 * u, Path.Direction.CW);
+                    line(6.5f, 12.5f, 10.5f, 12.5f);
+                    line(8.5f, 10.5f, 8.5f, 14.5f);
+                    dot(path, 15.5f, 11.5f, 1.3f);
+                    dot(path, 17.8f, 13.8f, 1.3f);
+                    break;
+                case PREFERENCES:   // sliders
+                    line(3, 6, 21, 6);
+                    line(3, 12, 21, 12);
+                    line(3, 18, 21, 18);
+                    dot(path, 8, 6, 2.6f);
+                    dot(path, 15, 12, 2.6f);
+                    dot(path, 10, 18, 2.6f);
+                    break;
+                case PRIVACY: { // padlock
+                    path.addRoundRect(box(5, 11, 19, 21), 2 * u, 2 * u, Path.Direction.CW);
+                    Path hole = new Path();
+                    dot(hole, 12, 15.6f, 1.7f);
+                    path.op(hole, Path.Op.DIFFERENCE);
+                    lines.moveTo(x(8), y(11));
+                    lines.lineTo(x(8), y(8));
+                    lines.arcTo(box(8, 4, 16, 12), 180, 180);
+                    lines.lineTo(x(16), y(11));
+                    break;
+                }
+                case ACCESSIBILITY: // person with arms out
+                    dot(path, 12, 4.5f, 2.2f);
+                    line(5, 9, 19, 9);
+                    line(12, 9, 12, 15);
+                    line(12, 15, 8.5f, 21);
+                    line(12, 15, 15.5f, 21);
+                    break;
+                case ACCOUNT:   // head and shoulders
+                    dot(path, 12, 8, 4);
+                    path.moveTo(x(4), y(22));
+                    path.arcTo(box(4, 14, 20, 30), 180, 180);
+                    path.close();
+                    break;
+                case DEVICE:    // TV with antenna
+                    lines.addRoundRect(box(3, 8, 21, 20), 2 * u, 2 * u, Path.Direction.CW);
+                    line(8, 3, 12, 8);
+                    line(16, 3, 12, 8);
+                    break;
+                case SLEEP: {   // crescent moon
+                    dot(path, 12, 12, 8.5f);
+                    Path bite = new Path();
+                    dot(bite, 16.5f, 8.5f, 6.8f);
+                    path.op(bite, Path.Op.DIFFERENCE);
+                    break;
+                }
+                case PICTURE:   // photo: frame, hills and sun
+                    lines.addRoundRect(box(3, 5, 21, 19), 2 * u, 2 * u, Path.Direction.CW);
+                    path.moveTo(x(5.5f), y(17));
+                    path.lineTo(x(10), y(11));
+                    path.lineTo(x(13.5f), y(15));
+                    path.lineTo(x(15.5f), y(12.5f));
+                    path.lineTo(x(18.5f), y(17));
+                    path.close();
+                    dot(path, 16, 9, 1.6f);
+                    break;
+                default:        // INFO: "i" in a circle
+                    lines.addCircle(x(12), y(12), 9 * u, Path.Direction.CW);
+                    line(12, 11, 12, 16.5f);
+                    dot(path, 12, 7.8f, 1.3f);
+                    break;
+            }
+        }
+
+        @Override public void draw(Canvas c) {
+            c.drawPath(lines, stroke);
+            c.drawPath(path, paint);
+        }
     }
 
     private static void gear(Path path, float cx, float cy, float outer) {

@@ -27,21 +27,29 @@ final class Tile extends LinearLayout {
     final FrameLayout card;
     private final TextView label;     // under the card while focused, or null
     private final TextView inner;     // inside the card (text tiles), or null
+    private final Art.Icon icon;      // above the text on text tiles, or null
     private final View gloss;
     private final GradientDrawable glass;
     private final float focusScale, dp;
     private OnFocusChangeListener listener;
 
     static Tile art(Context c, int w, int h, Drawable artwork, String name, boolean showLabel, float focusScale) {
-        return new Tile(c, w, h, artwork, name, showLabel, focusScale);
+        return new Tile(c, w, h, artwork, null, name, showLabel, focusScale);
     }
 
     static Tile text(Context c, int w, int h, String name) {
-        return new Tile(c, w, h, null, name, false, 1.08f);
+        return new Tile(c, w, h, null, null, name, false, 1.08f);
     }
 
-    private Tile(Context c, int w, int h, Drawable artwork, String name, boolean showLabel, float focusScale) {
+    /** A text tile with a small icon above the name (Settings). */
+    static Tile text(Context c, int w, int h, String name, int iconKind) {
+        return new Tile(c, w, h, null, Art.icon(iconKind), name, false, 1.08f);
+    }
+
+    private Tile(Context c, int w, int h, Drawable artwork, Art.Icon icon, String name, boolean showLabel,
+                 float focusScale) {
         super(c);
+        this.icon = icon;
         dp = c.getResources().getDisplayMetrics().density;
         this.focusScale = focusScale;
         setOrientation(VERTICAL);
@@ -74,13 +82,27 @@ final class Tile extends LinearLayout {
             inner = new TextView(c);
             inner.setText(name);
             inner.setTextColor(Color.WHITE);
-            inner.setTextSize(15);
+            inner.setTextSize(icon == null ? 15 : 14);
             inner.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
             inner.setGravity(Gravity.CENTER);
             inner.setMaxLines(2);
             int pad = Math.round(10 * dp);
             inner.setPadding(pad, 0, pad, 0);
-            card.addView(inner, new FrameLayout.LayoutParams(-1, -1));
+            if (icon == null) {
+                card.addView(inner, new FrameLayout.LayoutParams(-1, -1));
+            } else {
+                LinearLayout stack = new LinearLayout(c);
+                stack.setOrientation(VERTICAL);
+                stack.setGravity(Gravity.CENTER);
+                ImageView pic = new ImageView(c);
+                pic.setImageDrawable(icon);
+                int size = Math.round(24 * dp);
+                LayoutParams ip = new LayoutParams(size, size);
+                ip.bottomMargin = Math.round(6 * dp);
+                stack.addView(pic, ip);
+                stack.addView(inner, new LayoutParams(-1, -2));
+                card.addView(stack, new FrameLayout.LayoutParams(-1, -1));
+            }
         }
 
         gloss = new View(c);
@@ -130,6 +152,7 @@ final class Tile extends LinearLayout {
         if (inner != null) {
             glass.setColor(f ? 0xF5FFFFFF : 0x2EFFFFFF);
             inner.setTextColor(f ? 0xFF1C1C1E : Color.WHITE);
+            if (icon != null) icon.setColor(f ? 0xFF1C1C1E : Color.WHITE);
         }
     }
 

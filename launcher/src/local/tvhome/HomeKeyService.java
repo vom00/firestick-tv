@@ -43,6 +43,11 @@ public class HomeKeyService extends AccessibilityService {
     private static final long LONG_PRESS_MS = 600;
     private static final long COVER_MAX_MS = 7_000;
     private static final long QUICK_MENU_GRACE_MS = 2_000;
+    private static final long PICK_WINDOW_MS = 8_000;
+    private static final long PRESS_OK_WINDOW_MS = 30_000;   // time to press OK on a highlighted item
+    // Items to press in Amazon's Settings, one screen after another ("A>B"), and until when.
+    private static volatile String pendingPick;
+    private static volatile long pickUntil;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean longPressFired;
@@ -60,6 +65,17 @@ public class HomeKeyService extends AccessibilityService {
     };
     private final Runnable tapTile = this::tapOurTile;
     private final Runnable removeCover = this::hideCover;
+    private final Runnable pickSetting = this::pickSetting;
+    private int pickAttempts;
+
+    /**
+     * Fire OS 8: TV Home opened Amazon's main Settings screen; press these items in turn. A path
+     * like "A>B" goes one screen deeper per step.
+     */
+    static void pickInAmazonSettings(String path) {
+        pendingPick = path;
+        pickUntil = SystemClock.uptimeMillis() + PICK_WINDOW_MS;
+    }
 
     @Override
     protected boolean onKeyEvent(KeyEvent event) {
@@ -84,6 +100,12 @@ public class HomeKeyService extends AccessibilityService {
             handler.removeCallbacks(tapTile);
             handler.removeCallbacks(removeCover);
             handler.postDelayed(removeCover, 250);   // let TV Home draw first
+        } else if ((pkg.equals(AMAZON_LAUNCHER) && cls.endsWith(".MainSettingsActivity")) || pkg.equals(AMAZON_SETTINGS)) {
+            if (pendingPick != null && SystemClock.uptimeMillis() < pickUntil) {
+                pickAttempts = 0;
+                handler.removeCallbacks(pickSetting);
+                handler.postDelayed(pickSetting, 150);
+            }
         } else if (pkg.equals(AMAZON_LAUNCHER) && cls.startsWith(AMAZON_LAUNCHER + ".ui.HomeActivity")) {
             long now = SystemClock.uptimeMillis();
             if (lastPackage.equals(AMAZON_SETTINGS) && lastClass.contains(".hud.")) {
@@ -128,6 +150,70 @@ public class HomeKeyService extends AccessibilityService {
         }
         if (++tileAttempts < 12) handler.postDelayed(tapTile, 120);
         else Log.i(TAG, "TV Home tile not found in Amazon's favourites row; waiting for Android instead");
+    }
+
+    /**
+     * Presses the item TV Home asked for on Amazon's Settings screen. Its items are views labelled
+     * by content description; if one won't take a click, focusing it leaves just OK to press.
+     */
+    private void pickSetting() {
+        String path = pendingPick;
+        if (path == null || SystemClock.uptimeMillis() > pickUntil) return;
+        int split = path.indexOf('>');
+        String name = split < 0 ? path : path.substring(0, split);
+        String rest = split < 0 ? null : path.substring(split + 1);
+        AccessibilityNodeInfo root = getRootInActiveWindow();
+        String rootPkg = root == null ? "" : String.valueOf(root.getPackageName());
+        if (rootPkg.equals(AMAZON_LAUNCHER) || rootPkg.equals(AMAZON_SETTINGS)) {
+            // Walked by hand: Amazon's newer screens don't answer findAccessibilityNodeInfosByText.
+            AccessibilityNodeInfo n = find(root, name, 0);
+            if (n != null) {
+                if (open(n)) {
+                    Log.i(TAG, "Settings: opened " + name);
+                    pendingPick = rest;
+                    if (rest != null) {   // the next screen may come up without a new window
+                        pickAttempts = 0;
+                        handler.postDelayed(pickSetting, 400);
+                    }
+                } else {
+                    // Fire OS 8's main Settings tiles take focus but no clicks, so it's highlighted
+                    // and OK opens it. Any further steps wait for the screen that OK brings up.
+                    pendingPick = rest;
+                    if (rest != null) pickUntil = SystemClock.uptimeMillis() + PRESS_OK_WINDOW_MS;
+                    Log.i(TAG, "Settings: highlighted " + name);
+                }
+                return;
+            }
+        }
+        if (++pickAttempts < 20) handler.postDelayed(pickSetting, 150);
+        else Log.i(TAG, "Settings item '" + name + "' not found");
+    }
+
+    /**
+     * Opens a Settings item: a click on it or the nearest clickable parent. Amazon's newer tiles
+     * aren't marked clickable, so failing that, focus the tile and click it anyway.
+     */
+    private static boolean open(AccessibilityNodeInfo n) {
+        for (AccessibilityNodeInfo p = n; p != null; p = p.getParent()) {
+            if (p.isClickable() && p.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true;
+        }
+        for (AccessibilityNodeInfo p = n; p != null; p = p.getParent()) {
+            if (!p.isFocusable()) continue;
+            p.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
+            return p.performAction(AccessibilityNodeInfo.ACTION_CLICK) || n.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        }
+        return n.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+    }
+
+    /** The first node labelled exactly name, by content description or text. */
+    private static AccessibilityNodeInfo find(AccessibilityNodeInfo node, String name, int depth) {
+        if (node == null || depth > 30) return null;
+        if (name.equals(String.valueOf(node.getContentDescription())) || name.equals(String.valueOf(node.getText()))) return node;
+        for (int i = 0; i < node.getChildCount(); i++) {
+            AccessibilityNodeInfo hit = find(node.getChild(i), name, depth + 1);
+            if (hit != null) return hit;
+        }
+        return null;
     }
 
     /** A full-screen picture of the current wallpaper over Amazon's home while we switch. */
