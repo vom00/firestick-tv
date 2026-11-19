@@ -94,8 +94,8 @@ press.
 
 ## Not in this repo
 
-The `tools\` folder (Google's Android SDK), device backups, screenshots, build output, the APK
-signing key and `my-wallpapers\` (a place for your own photos) stay local. `build-launcher.ps1`
+The `tools\` folder (Google's Android SDK), device backups, screenshots, build output and the APK
+signing key stay local. `build-launcher.ps1`
 makes a new signing key if there isn't one, but an APK signed with a new key won't install over
 one signed with the old key.
 
@@ -116,3 +116,8 @@ and keep their original licences:
 - November fog on the Uetliberg, Switzerland. Photo: Kuhnmi, CC BY-SA 4.0
 - Dawn on Lago do Cuniã, Brazil. Photo: RodrigoErse, CC BY-SA 4.0
 - Gullfoss, Iceland. Photo: Pierre-Selim Huard, CC BY 4.0
+
+`my-wallpapers\` holds the anime and art wallpapers I added with `add-wallpapers.ps1`. They
+aren't built into TV Home and aren't under this repo's licence: all rights stay with their
+owners. `my-wallpapers\credits.txt` names each series, creator and studio. A few are by
+artists I couldn't find; if one is yours, open an issue and I'll credit you or take it down.

@@ -1,0 +1,27 @@
+My wallpapers, added to TV Home with add-wallpapers.ps1. All rights stay with their owners;
+they're shared here for personal use and credited as far as I know them. Most were upscaled
+to 1920x1080 with Real-ESRGAN.
+
+bleach.jpg, bleach-ulquiorra.jpg
+    Bleach. Tite Kubo; anime by Studio Pierrot
+chainsaw-man.jpg
+    Chainsaw Man. Tatsuki Fujimoto; anime by MAPPA
+code-geass.jpg
+    Code Geass: Lelouch of the Rebellion. Sunrise
+death-note.jpg
+    Death Note. Tsugumi Ohba and Takeshi Obata; anime by Madhouse
+evangelion.jpg
+    Neon Genesis Evangelion. Hideaki Anno; Gainax and Khara
+mononoke-forest.jpg, mononoke-spirits.jpg
+    Princess Mononoke. Hayao Miyazaki, Studio Ghibli
+naruto-konoha.jpg
+    Naruto. Masashi Kishimoto; anime by Studio Pierrot
+one-piece-island.jpg
+    One Piece. Eiichiro Oda; anime by Toei Animation
+spirited-away-train.jpg
+    Spirited Away. Hayao Miyazaki, Studio Ghibli
+steel-ball-run.jpg
+    Steel Ball Run (JoJo's Bizarre Adventure Part 7). Hirohiko Araki
+goldfish.jpg, pier-at-sunset.jpg, purple-sky-city.jpg, seaside-painting.jpg,
+spider-lily-field.jpg, starry-night-beach.jpg
+    Artists unknown. If one of these is yours, open an issue and I'll credit you or take it down.
